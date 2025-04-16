@@ -56,7 +56,7 @@ const JobPage = () => {
         <h1 className="gradient-title font-extrabold pb-3 text-4xl sm:text-6xl">
           {job?.title}
         </h1>
-        <img src={job?.company?.logo_url} className="h-12" alt={job?.title} />
+        <img src={job?.company?.logo_url} className="w-[150px] h-[50px] object-contain" alt={job?.title} />
       </div>
 
       <div className="flex justify-between ">

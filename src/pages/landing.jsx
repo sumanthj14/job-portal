@@ -21,12 +21,11 @@ const LandingPage = () => {
     <main className="flex flex-col gap-10 sm:gap-20 py-10 sm:py-20">
       <section className="text-center ">
         <h1 className="flex flex-col items-center justify-center gradient-title font-extrabold text-4xl sm:text-6xl lg:text-8xl tracking-tighter py-4">
-          Find Your Dream Job
+          Find Your Dream Job Through
           <span className="flex items-center gap-2 sm:gap-6">
-            and get
             <img
               src="/logo.png"
-              className="h-14 sm:h-24 lg:h-32"
+              className="w-[500px] h-[105px] object-contain"
               alt="Hirrd Logo"
             />
           </span>
@@ -35,7 +34,7 @@ const LandingPage = () => {
           Explore thousands of job listings or find the perfect candidate
         </p>
       </section>
-      <div className="flex gap-6 justify-center">
+      <div className="flex flex-wrap gap-4 sm:gap-6 justify-center">
         <Link to={"/jobs"}>
           <Button variant="blue" size="xl">
             Find Jobs
@@ -53,7 +52,7 @@ const LandingPage = () => {
             delay: 2000,
           }),
         ]}
-        className="w-full py-10"
+        className="w-full py-10 relative z-[-1]"
       >
         <CarouselContent className="flex gap-5 sm:gap-20 items-center">
           {companies.map(({ name, id, path }) => (
@@ -68,7 +67,7 @@ const LandingPage = () => {
         </CarouselContent>
       </Carousel>
 
-      <img src="/banner.jpeg" className="w-full" />
+      <img src="/banner.jpeg" className="w-full relative z-[1]" />
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
