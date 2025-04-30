@@ -1,8 +1,9 @@
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { BarLoader } from "react-spinners";
+import { syncUserWithSupabase } from "@/api/apiUsers";
 
 const Onboarding = () => {
   const { user, isLoaded } = useUser();
@@ -12,16 +13,26 @@ const Onboarding = () => {
     navigate(currRole === "recruiter" ? "/post-job" : "/jobs");
   };
 
+  const { getToken } = useAuth();
+
   const handleRoleSelection = async (role) => {
-    await user
-      .update({ unsafeMetadata: { role } })
-      .then(() => {
-        console.log(`Role updated to: ${role}`);
-        navigateUser(role);
-      })
-      .catch((err) => {
-        console.error("Error updating role:", err);
-      });
+    try {
+      // Update user role in Clerk
+      await user.update({ unsafeMetadata: { role } });
+      console.log(`Role updated to: ${role}`);
+      
+      // Sync user data with Supabase
+      const token = await getToken({ template: 'supabase' });
+      if (token) {
+        await syncUserWithSupabase(token, user);
+        console.log('User synchronized with Supabase after role update');
+      }
+      
+      // Navigate to appropriate page
+      navigateUser(role);
+    } catch (err) {
+      console.error("Error updating role or syncing with Supabase:", err);
+    }
   };
 
   useEffect(() => {

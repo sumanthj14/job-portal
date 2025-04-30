@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import MDEditor from "@uiw/react-md-editor";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { Briefcase, DoorClosed, DoorOpen, MapPinIcon } from "lucide-react";
+import { Briefcase, DoorClosed, DoorOpen, MapPinIcon, Edit } from "lucide-react";
 
 import {
   Select,
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { ApplyJobDrawer } from "@/components/apply-job";
 import ApplicationCard from "@/components/application-card";
 
@@ -21,6 +22,10 @@ import { getSingleJob, updateHiringStatus } from "@/api/apiJobs";
 const JobPage = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
+  const navigate = useNavigate();
+  
+  // Determine if user is a recruiter
+  const isRecruiter = user?.unsafeMetadata?.role === "recruiter";
 
   const {
     loading: loadingJob,
@@ -67,7 +72,7 @@ const JobPage = () => {
           <Briefcase /> {job?.applications?.length} Applicants
         </div>
         <div className="flex gap-2">
-          {job?.isOpen ? (
+          {job?.isopen ? (
             <>
               <DoorOpen /> Open
             </>
@@ -82,11 +87,11 @@ const JobPage = () => {
       {job?.recruiter_id === user?.id && (
         <Select onValueChange={handleStatusChange}>
           <SelectTrigger
-            className={`w-full ${job?.isOpen ? "bg-green-950" : "bg-red-950"}`}
+            className={`w-full ${job?.isopen ? "bg-green-950" : "bg-red-950"}`}
           >
             <SelectValue
               placeholder={
-                "Hiring Status " + (job?.isOpen ? "( Open )" : "( Closed )")
+                "Hiring Status " + (job?.isopen ? "( Open )" : "( Closed )")
               }
             />
           </SelectTrigger>
@@ -107,14 +112,29 @@ const JobPage = () => {
         source={job?.requirements}
         className="bg-transparent sm:text-lg" // add global ul styles - tutorial
       />
-      {job?.recruiter_id !== user?.id && (
-        <ApplyJobDrawer
-          job={job}
-          user={user}
-          fetchJob={fnJob}
-          applied={job?.applications?.find((ap) => ap.candidate_id === user.id)}
-        />
-      )}
+      {/* Show different actions based on user role and job ownership */}
+      <div className="flex gap-4">
+        {/* For candidates: Show apply button only if job is open */}
+        {!isRecruiter && job?.recruiter_id !== user?.id && (
+          <ApplyJobDrawer
+            job={job}
+            user={user}
+            fetchJob={fnJob}
+            applied={job?.applications?.find((ap) => ap.candidate_id === user.id)}
+          />
+        )}
+        
+        {/* For recruiters who own this job: Show edit button */}
+        {isRecruiter && job?.recruiter_id === user?.id && (
+          <Button 
+            onClick={() => navigate(`/post-job?edit=${job.id}`)}
+            variant="secondary"
+            className="flex gap-2 items-center"
+          >
+            <Edit size={16} /> Edit Job
+          </Button>
+        )}
+      </div>
       {loadingHiringStatus && <BarLoader width={"100%"} color="#36d7b7" />}
       {job?.applications?.length > 0 && job?.recruiter_id === user?.id && (
         <div className="flex flex-col gap-2">

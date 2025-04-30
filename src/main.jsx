@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
-import { ClerkProvider } from "@clerk/clerk-react";
+import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { shadesOfPurple } from "@clerk/themes";
 
 // Import your publishable key
@@ -12,6 +12,9 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Publishable Key");
 }
 
+// Configure Supabase token template
+const supabaseTemplate = "supabase";
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <ClerkProvider
@@ -20,6 +23,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       }}
       publishableKey={PUBLISHABLE_KEY}
       afterSignOutUrl="/"
+      tokenCache={{
+        supabase: {
+          template: supabaseTemplate
+        }
+      }}
     >
       <App />
     </ClerkProvider>

@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { Heart, MapPinIcon, Trash2Icon } from "lucide-react";
+import { Heart, MapPinIcon, Trash2Icon, Edit, DoorClosed, DoorOpen } from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -24,6 +24,9 @@ const JobCard = ({
   const [saved, setSaved] = useState(savedInit);
 
   const { user } = useUser();
+  
+  // Determine if user is a recruiter
+  const isRecruiter = user?.unsafeMetadata?.role === "recruiter";
 
   const { loading: loadingDeleteJob, fn: fnDeleteJob } = useFetch(deleteJob, {
     job_id: job.id,
@@ -86,7 +89,27 @@ const JobCard = ({
             More Details
           </Button>
         </Link>
-        {!isMyJob && (
+        
+        {/* Show job status indicator for all users */}
+        <div className="flex items-center mr-2">
+          {job.isopen ? (
+            <DoorOpen size={18} className="text-green-500" title="Job Open" />
+          ) : (
+            <DoorClosed size={18} className="text-red-500" title="Job Closed" />
+          )}
+        </div>
+        
+        {/* For recruiters who own this job: Show edit link */}
+        {isMyJob && isRecruiter && (
+          <Link to={`/post-job?edit=${job.id}`}>
+            <Button variant="outline" className="w-10 p-0">
+              <Edit size={18} />
+            </Button>
+          </Link>
+        )}
+        
+        {/* For candidates: Show save button */}
+        {!isRecruiter && !isMyJob && (
           <Button
             variant="outline"
             className="w-15"

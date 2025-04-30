@@ -3,6 +3,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import AppLayout from "./layouts/app-layout";
 import ProtectedRoute from "./components/protected-route";
 import { ThemeProvider } from "./components/theme-provider";
+import ClerkWebhookHandler from "./components/clerk-webhook-handler";
 
 import LandingPage from "./pages/landing";
 import Onboarding from "./pages/onboarding";
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <ClerkWebhookHandler />
       <RouterProvider router={router} />
     </ThemeProvider>
   );

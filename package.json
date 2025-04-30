@@ -24,6 +24,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "country-state-city": "^3.2.1",
+    "dotenv": "^16.5.0",
     "embla-carousel-autoplay": "^8.1.8",
     "embla-carousel-react": "^8.1.8",
     "lucide-react": "^0.424.0",

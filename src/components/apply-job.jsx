@@ -41,6 +41,9 @@ const schema = z.object({
 });
 
 export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
+  // Check if the job is open for applications
+  const isJobOpen = job?.isopen === true;
+  
   const {
     register,
     handleSubmit,
@@ -58,6 +61,12 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
   } = useFetch(applyToJob);
 
   const onSubmit = (data) => {
+    // Prevent application if job is closed
+    if (!isJobOpen) {
+      console.error("Cannot apply to a closed job");
+      return;
+    }
+    
     fnApply({
       ...data,
       job_id: job.id,
@@ -72,14 +81,14 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
   };
 
   return (
-    <Drawer open={applied ? false : undefined}>
+    <Drawer open={applied || !isJobOpen ? false : undefined}>
       <DrawerTrigger asChild>
         <Button
           size="lg"
-          variant={job?.isOpen && !applied ? "blue" : "destructive"}
-          disabled={!job?.isOpen || applied}
+          variant={isJobOpen && !applied ? "blue" : "destructive"}
+          disabled={!isJobOpen || applied}
         >
-          {job?.isOpen ? (applied ? "Applied" : "Apply") : "Hiring Closed"}
+          {isJobOpen ? (applied ? "Applied" : "Apply") : "Hiring Closed"}
         </Button>
       </DrawerTrigger>
       <DrawerContent>
