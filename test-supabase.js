@@ -11,7 +11,7 @@ const getEnv = (key) => {
 export const supabaseUrl = getEnv('VITE_SUPABASE_URL');
 const supabaseKey = getEnv('VITE_SUPABASE_ANON_KEY');
 
-console.log('Supabase URL in supabase.js:', supabaseUrl);
+console.log('Supabase URL in test-supabase.js:', supabaseUrl);
 
 // Singleton instance to prevent multiple GoTrueClient instances
 let supabaseInstance = null;
@@ -28,12 +28,12 @@ const supabaseClient = async (supabaseAccessToken) => {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         } 
-      },
+      }
     });
     return supabaseInstance;
   }
-  
-  // Create a new instance if one doesn't exist
+
+  // Create a new instance with the token
   supabaseInstance = createClient(supabaseUrl, supabaseKey, {
     global: { 
       headers: { 
@@ -41,11 +41,9 @@ const supabaseClient = async (supabaseAccessToken) => {
         Accept: 'application/json',
         'Content-Type': 'application/json'
       } 
-    },
+    }
   });
-  
-  // set Supabase JWT on the client object,
-  // so it is sent up with all Supabase requests
+
   return supabaseInstance;
 };
 

@@ -94,16 +94,24 @@ const schema = z.object({
   resume: z
     .any()
     .refine(
-      (file) =>
-        file[0] &&
-        (file[0].type === "application/pdf" ||
+      (file) => {
+        // Check if file exists and is an array with at least one item
+        if (!file || !Array.isArray(file) || file.length === 0) {
+          return false;
+        }
+        
+        // Check file type
+        return (
+          file[0].type === "application/pdf" ||
           file[0].type === "application/msword" ||
-          file[0].type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-      { message: "Only PDF or Word documents are allowed" }
+          file[0].type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        );
+      },
+      { message: "Resume is required. Only PDF or Word documents are allowed" }
     ),
 });
 
-export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
+function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
   // Check if the job is open for applications
   const isJobOpen = job?.isopen === true;
   
@@ -267,22 +275,220 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
   };
 
   const onSubmit = (data) => {
+    // Add debug logging
+    console.log("Form submission triggered", { currentStep, stepsLength: steps.length });
+    console.log("Resume data:", {
+      resumeExists: !!data.resume,
+      isArray: Array.isArray(data.resume),
+      length: data.resume ? data.resume.length : 0,
+      resumeValue: data.resume,
+      resumeFile: resumeFile
+    });
+    
     // Prevent application if job is closed
     if (!isJobOpen) {
       console.error("Cannot apply to a closed job");
+      alert("This job is no longer accepting applications.");
       return;
     }
+    
+    // Validate resume file exists
+    if (!data.resume || !Array.isArray(data.resume) || data.resume.length === 0) {
+      console.error("Resume file missing or invalid");
+      
+      // Try to use resumeFile from state if available
+      if (resumeFile) {
+        console.log("Using resumeFile from state instead of form data");
+        data.resume = [resumeFile];
+      } else {
+        alert("Please upload a resume file.");
+        return;
+      }
+    }
+    
+    // Validate file type
+    const resumeFileObj = data.resume[0];
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+    
+    // Add detailed logging about the resume file
+    console.log("Resume file details before validation:", {
+      exists: !!resumeFileObj,
+      type: resumeFileObj?.type,
+      size: resumeFileObj?.size,
+      name: resumeFileObj?.name
+    });
+    
+    if (!allowedTypes.includes(resumeFileObj.type)) {
+      console.error("Invalid file type:", resumeFileObj.type);
+      alert("Invalid file type. Only PDF or Word documents are allowed.");
+      return;
+    }
+    
+    // Check file size (limit to 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+    if (resumeFileObj.size > MAX_FILE_SIZE) {
+      console.error("File size too large:", resumeFileObj.size);
+      alert("File size exceeds the 10MB limit.");
+      return;
+    }
+    
+    console.log("Submitting application with data:", { 
+      ...data, 
+      resume: data.resume ? `File: ${data.resume[0]?.name}` : null 
+    });
+    
+    // Log that we're about to upload the resume to Supabase
+    console.log("Preparing to upload resume to Supabase storage bucket 'resumes'...");
+    console.log("NOTE: You may see 'PDF parsing completed' messages first - this is normal. The actual storage in Supabase happens AFTER parsing, in apiApplication.js");
+    
+    // Show loading alert
+    alert("Submitting your application. Please wait...");
+    
+    // Ensure we have a valid resume file to send
+    if (!resumeFileObj && !resumeFile) {
+      console.error("No resume file provided");
+      alert("Please upload a resume file. It's required for your application.");
+      return;
+    }
+    
+    let fileToSubmit = resumeFileObj || resumeFile;
+    
+    // Add detailed logging about the file being submitted
+    console.log("File being submitted to API:", {
+      exists: !!fileToSubmit,
+      type: fileToSubmit?.type,
+      size: fileToSubmit?.size,
+      name: fileToSubmit?.name,
+      source: resumeFileObj ? "form data" : "state variable"
+    });
+    
+    // Ensure file type is set correctly based on extension if it's undefined
+    if (fileToSubmit && !fileToSubmit.type) {
+      const fileName = fileToSubmit.name || '';
+      const fileExt = fileName.split('.').pop().toLowerCase();
+      
+      // Set the file type based on extension
+      if (fileExt === 'pdf') {
+        // Create a new File object with the correct type
+        const newFile = new File(
+          [fileToSubmit], 
+          fileToSubmit.name, 
+          { type: 'application/pdf' }
+        );
+        fileToSubmit = newFile;
+        console.log("Fixed file type to application/pdf based on extension");
+      } else if (fileExt === 'doc') {
+        const newFile = new File(
+          [fileToSubmit], 
+          fileToSubmit.name, 
+          { type: 'application/msword' }
+        );
+        fileToSubmit = newFile;
+        console.log("Fixed file type to application/msword based on extension");
+      } else if (fileExt === 'docx') {
+        const newFile = new File(
+          [fileToSubmit], 
+          fileToSubmit.name, 
+          { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+        );
+        fileToSubmit = newFile;
+        console.log("Fixed file type to application/vnd.openxmlformats-officedocument.wordprocessingml.document based on extension");
+      }
+    }
+    
+    // Reuse the existing allowedTypes array from above
+    if (!fileToSubmit || !allowedTypes.includes(fileToSubmit.type)) {
+      console.error("Invalid file type:", fileToSubmit?.type);
+      alert("Please upload a valid resume file. Only PDF or Word documents are allowed.");
+      return;
+    }
+    
+    // Prepare parsed resume data for storage in metadata
+    const parsedResumeData = {
+      personal: {
+        firstName: data.firstName,
+        middleName: data.middleName,
+        lastName: data.lastName,
+        email: data.email,
+        contactNumber: data.contactNumber,
+        linkedinUrl: data.linkedinUrl,
+        githubUrl: data.githubUrl,
+        portfolioUrl: data.portfolioUrl,
+        address: data.address
+      },
+      education: {
+        collegeName: data.collegeName,
+        degree: data.degree,
+        universityName: data.universityName,
+        specialization: data.specialization,
+        graduationYear: data.graduationYear,
+        startYear: data.startYear,
+        endYear: data.endYear,
+        location: data.location,
+        cgpa: data.cgpa,
+        educationLevel: data.educationLevel
+      },
+      projects: data.projects,
+      workExperiences: data.workExperiences,
+      skills: {
+        skills: data.skills,
+        technicalSkills: data.technicalSkills,
+        softSkills: data.softSkills,
+        languages: data.languages,
+        certifications: data.certifications,
+        experience: data.experience
+      }
+    };
     
     fnApply({
       ...data,
       job_id: job.id,
       candidate_id: user.id,
       name: `${data.firstName} ${data.lastName}`,
+      email: data.email,
+      phone: data.contactNumber,
       status: "applied",
-      resume: data.resume[0],
-    }).then(() => {
+      resume: [fileToSubmit], // Use the validated file object in array format
+      parsedResumeData: parsedResumeData // Include parsed resume data for storage in metadata
+    })
+    .then((result) => {
+      // Show success alert
+      console.log("Application submitted successfully:", result);
+      
+      // Check if resume exists in the result to confirm storage success
+      if (result && result.resume) {
+        console.log("✅ Resume successfully stored in Supabase bucket 'resumes' with URL:", result.resume);
+      } else {
+        console.warn("⚠️ Application submitted but resume may not have been stored properly. No resume found in result.");
+      }
+      
+      alert("Application submitted successfully!");
       fetchJob();
       reset();
+    })
+    .catch((error) => {
+      // Show detailed error alert
+      console.error("Application submission error:", error);
+      console.error("❌ Resume was NOT stored in Supabase due to an error.");
+      
+      // Provide more specific error message based on error type
+      let errorMessage = "Error submitting application";
+      
+      if (error.message.includes("token") || error.message.includes("Authentication")) {
+        errorMessage = "Authentication error: Please sign out and sign in again.";
+      } else if (error.message.includes("storage") || error.message.includes("bucket")) {
+        errorMessage = "Error uploading resume: Storage issue. Please try again later.";
+      } else if (error.message.includes("database") || error.message.includes("insert")) {
+        errorMessage = "Error saving application: Database issue. Please try again later.";
+      } else {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     });
   };
 
@@ -371,7 +577,32 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
         </DrawerHeader>
 
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={(e) => {
+            console.log("Form submit event triggered");
+            // Prevent default form submission
+            e.preventDefault();
+            
+            // Get form values directly
+            const formValues = watch();
+            console.log("Form values from form submission:", formValues);
+            
+            // Check if resume exists and format it correctly
+            if (!formValues.resume || !Array.isArray(formValues.resume) || formValues.resume.length === 0) {
+              console.log("Resume field is missing or invalid in form submission");
+              // Try to get the resume file from the resumeFile state
+              if (resumeFile) {
+                console.log("Using resumeFile from state in form submission");
+                formValues.resume = [resumeFile];
+                // Call onSubmit directly with the fixed values
+                onSubmit(formValues);
+              } else {
+                alert("Please upload a resume file.");
+              }
+            } else {
+              // Use react-hook-form's handleSubmit
+              handleSubmit(onSubmit)(e);
+            }
+          }}
           className="flex flex-col gap-4 p-4 overflow-y-auto custom-scrollbar"
           style={{ 
             height: "calc(90vh - 200px)", 
@@ -387,8 +618,9 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
             <div className="border rounded-md p-4 mb-2">
               <div className="flex items-center gap-2 mb-2">
                 <FileText className="h-5 w-5" />
-                <h3 className="font-medium">Resume Upload</h3>
+                <h3 className="font-medium">Resume Upload <span className="text-red-500">*</span></h3>
               </div>
+              <p className="text-sm text-gray-500 mb-2">Upload your resume in PDF or Word format. This is required to proceed with your application.</p>
               <Input
                 type="file"
                 accept=".pdf, .doc, .docx"
@@ -930,9 +1162,46 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
                 Next
               </Button>
             ) : (
-              <Button type="submit" variant="blue" size="lg">
-                Apply
-              </Button>
+              <>
+                <Button 
+                  type="submit" 
+                  variant="blue" 
+                  size="lg"
+                  onClick={() => console.log("Apply button clicked", { currentStep, stepsLength: steps.length })}
+                >
+                  Apply
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="lg"
+                  onClick={() => {
+                    console.log("Direct submit button clicked");
+                    // Get form values
+                    const formValues = watch();
+                    console.log("Form values from watch():", formValues);
+                    
+                    // Check if resume exists and format it correctly
+                    if (!formValues.resume || !Array.isArray(formValues.resume) || formValues.resume.length === 0) {
+                      console.log("Resume field is missing or invalid in watch() values");
+                      // Try to get the resume file from the resumeFile state
+                      if (resumeFile) {
+                        console.log("Using resumeFile from state instead");
+                        formValues.resume = [resumeFile];
+                      } else {
+                        alert("Please upload a resume file.");
+                        return;
+                      }
+                    }
+                    
+                    // Call onSubmit with properly formatted values
+                    onSubmit(formValues);
+                  }}
+                  className="ml-2"
+                >
+                  Apply (Direct)
+                </Button>
+              </>
             )}
           </div>
         </form>
@@ -940,3 +1209,5 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
     </Drawer>
   );
 }
+
+export default ApplyJobDrawer;

@@ -121,7 +121,7 @@ const JobListing = () => {
             <SelectGroup>
               {companies?.map(({ name, id }) => {
                 return (
-                  <SelectItem key={name} value={id}>
+                  <SelectItem key={`company-${id}`} value={id}>
                     {name}
                   </SelectItem>
                 );

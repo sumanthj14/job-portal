@@ -1,0 +1,13 @@
+@echo off
+echo Setting environment variables from .env file...
+
+set VITE_SUPABASE_URL=https://lecmbaolkurxwdlzkmxh.supabase.co
+set VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlY21iYW9sa3VyeHdkbHprbXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQwMjIyNDQsImV4cCI6MjA1OTU5ODI0NH0.Cx9nPQl2PjJJxE3sAO_UJ1EVnG7Dmdg0Z4COxMebpZs
+set VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxlY21iYW9sa3VyeHdkbHprbXhoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NDAyMjI0NCwiZXhwIjoyMDU5NTk4MjQ0fQ.pFghbPLnuBPyNIADfPcarN5CxIuKDbbpmS-6kCvO4zI
+
+echo Running job application test...
+node test-job-application-api.js
+
+echo.
+echo Test completed. Press any key to exit.
+pause > nul

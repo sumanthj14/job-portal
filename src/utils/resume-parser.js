@@ -93,7 +93,7 @@ async function parsePdf(file) {
       fullText += pageText + '\n\n';
     }
     
-    console.log('PDF parsing completed successfully');
+    console.log('PDF parsing completed successfully - this is just the parsing step. The actual storage in Supabase happens in apiApplication.js');
     return fullText;
   } catch (error) {
     console.error('Error parsing PDF:', error);

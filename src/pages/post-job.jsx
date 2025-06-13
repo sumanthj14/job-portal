@@ -314,7 +314,7 @@ function generateUUID() {
                 <SelectContent>
                   <SelectGroup>
                     {companies?.map(({ name, id }) => (
-                      <SelectItem key={name} value={id.toString()}>
+                      <SelectItem key={`company-${id}`} value={id.toString()}>
                         {name}
                       </SelectItem>
                     ))}
