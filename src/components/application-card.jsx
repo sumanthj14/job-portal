@@ -20,8 +20,17 @@ import { BarLoader } from "react-spinners";
 
 const ApplicationCard = ({ application, isCandidate = false }) => {
   const handleDownload = () => {
+    // Use resume_url if available, fall back to resume for backward compatibility
+    const resumeUrl = application?.resume_url || application?.resume;
+    
+    if (!resumeUrl) {
+      console.error("No resume URL available");
+      alert("Resume not available for download");
+      return;
+    }
+    
     const link = document.createElement("a");
-    link.href = application?.resume;
+    link.href = resumeUrl;
     link.target = "_blank";
     link.click();
   };
