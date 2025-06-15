@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
-import { BarLoader } from "react-spinners";
-import MDEditor from "@uiw/react-md-editor";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
-import { Briefcase, DoorClosed, DoorOpen, MapPinIcon, Edit } from "lucide-react";
-
+import { BarLoader } from "react-spinners";
+import { Edit, DoorOpen, DoorClosed, Briefcase, MapPinIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+// Removed Badge import as it doesn't exist
+// Removed Separator import as it doesn't exist
+// Removed Switch import as it doesn't exist
+import { Label } from "@/components/ui/label";
+import ApplyJobDrawer from "@/components/apply-job";
+// Removed MultiStepApplicationForm import
+import useFetch from "@/hooks/use-fetch";
+import { getSingleJob, updateHiringStatus } from "@/api/apiJobs";
+import MDEditor from "@uiw/react-md-editor";
+import ApplicationCard from "@/components/application-card";
 import {
   Select,
   SelectContent,
@@ -12,17 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { ApplyJobDrawer } from "@/components/apply-job";
-import ApplicationCard from "@/components/application-card";
-
-import useFetch from "@/hooks/use-fetch";
-import { getSingleJob, updateHiringStatus } from "@/api/apiJobs";
 
 const JobPage = () => {
   const { id } = useParams();
   const { isLoaded, user } = useUser();
   const navigate = useNavigate();
+  // Removed isDialogOpen state
+  // Removed useNewForm state
   
   // Determine if user is a recruiter
   const isRecruiter = user?.unsafeMetadata?.role === "recruiter";
@@ -50,6 +55,8 @@ const JobPage = () => {
     const isOpen = value === "open";
     fnHiringStatus(isOpen).then(() => fnJob());
   };
+
+  // Removed handleApplicationSuccess function
 
   if (!isLoaded || loadingJob) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
@@ -116,12 +123,14 @@ const JobPage = () => {
       <div className="flex gap-4">
         {/* For candidates: Show apply button only if job is open */}
         {!isRecruiter && job?.recruiter_id !== user?.id && (
-          <ApplyJobDrawer
-            job={job}
-            user={user}
-            fetchJob={fnJob}
-            applied={job?.applications?.find((ap) => ap.candidate_id === user.id)}
-          />
+          <>
+            <ApplyJobDrawer
+              job={job}
+              user={user}
+              fetchJob={fnJob}
+              applied={job?.applications?.find((ap) => ap.candidate_id === user.id)}
+            />
+          </>
         )}
         
         {/* For recruiters who own this job: Show edit button */}

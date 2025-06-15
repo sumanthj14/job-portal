@@ -63,7 +63,9 @@ export async function syncUserWithSupabase(token, userData) {
   // This is similar to the approach used in the test scripts
   supabase.headers = {
     ...supabase.headers,
-    'x-supabase-auth-token': `Bearer ${token}`
+    'x-supabase-auth-token': `Bearer ${token}`,
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
   };
   
   // Check if user already exists
